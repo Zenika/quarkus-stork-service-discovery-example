@@ -5,7 +5,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 
 @Path("/health")
-public class HealtCheckResource {
+public class HealthCheckResource {
 
     @GET
     public Response alive() {

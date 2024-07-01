@@ -42,7 +42,7 @@ public class DiscoveryRegistration {
         var consulClientOptions = new ConsulClientOptions().setHost(consulHost).setPort(consulPort);
         consulClient = ConsulClient.create(vertx, consulClientOptions);
         var host = applicationHost.equals("0.0.0.0") ? "localhost" : applicationHost;
-        var healthUri = UriBuilder.fromResource(HealtCheckResource.class)
+        var healthUri = UriBuilder.fromResource(HealthCheckResource.class)
                 .scheme("http")
                 .host(host)
                 .port(applicationPort)

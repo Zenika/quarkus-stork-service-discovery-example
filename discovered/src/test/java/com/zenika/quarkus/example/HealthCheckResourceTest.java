@@ -4,26 +4,21 @@ import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
-import static com.zenika.quarkus.example.DiscoveryRegistration.SERVICE_ID;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.TEXT;
-import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
-@TestHTTPEndpoint(DiscoveredResource.class)
-class DiscoveredResourceTest {
+@TestHTTPEndpoint(HealthCheckResource.class)
+class HealthCheckResourceTest {
 
     @Test
-    void testDiscoveryGet() {
+    void testHealthCheckGet() {
         given()
             .contentType(TEXT)
         .when()
             .get()
         .then()
-            .statusCode(200)
-            .body(is("a GET request has been done to `discovered` node with id : " + SERVICE_ID));
-
-
+            .statusCode(204);
     }
 
 }

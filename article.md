@@ -98,8 +98,14 @@ Voici à quoi devrait ressembler notre architecture finale :
 
 ![avec service discovery multi instances](./resources/avec-service-discovery-multi-instances.png)
 
+Notre premier applicatif va s'enregistrer dans Consul, pour ça nous aurons besoin qu'il soit disponible, nous allons donc voir comment démarrer une instance grâce à docker et docker-compose.\
+Puis, nous allons voir comment configurer notre autre applicatif pour qu'il puisse savoir où se situent les instances du premier via Stork et Consul.\
+Nous discuterons de comment tester que ça fonctionne en local.\
+Et nous finirons par quelques bonus. 
+
 ### Mise en place/configuration de Consul.
-Pour démarrer notre Consul, nous passerons par l'image docker officielle et la démarrerons via un docker-compose.
+Pour démarrer notre Consul, nous passerons par l'image docker officielle et la démarrerons via un docker-compose.\
+Il faudra donc vous assurer d'avoir bien installé les deux avant de commencer.
 
 Commençons par la configuration la plus simple, notre consul en mode dev/standalone :
 
