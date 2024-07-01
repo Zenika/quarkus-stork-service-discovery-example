@@ -10,6 +10,8 @@ import jakarta.ws.rs.core.UriBuilder;
 
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
+import io.quarkus.scheduler.Scheduled;
+import io.smallrye.mutiny.Uni;
 import io.vertx.ext.consul.CheckOptions;
 import io.vertx.ext.consul.CheckStatus;
 import io.vertx.ext.consul.ConsulClientOptions;
@@ -18,6 +20,8 @@ import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.consul.ConsulClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
+
+import static java.lang.Boolean.TRUE;
 
 @ApplicationScoped
 public class DiscoveryRegistration {
@@ -44,7 +48,7 @@ public class DiscoveryRegistration {
                 .port(applicationPort)
                 .build();
         var checkOption = new CheckOptions()
-                .setId("httpServiceCheck")
+                .setId("httpServiceCheck-%s".formatted(SERVICE_ID))
                 .setName("discovered-service-check")
                 .setInterval("1s")
                 .setDeregisterAfter("5s")
@@ -71,6 +75,26 @@ public class DiscoveryRegistration {
     public void deregister(@Observes ShutdownEvent event) {
         consulClient.deregisterServiceAndAwait(SERVICE_ID);
         LOGGER.infof("service with id %s deregistered at %s.", SERVICE_ID, Instant.now());
+    }
+
+    @Scheduled(every = "3s")
+    public void reconnect() {
+        consulClient.catalogServiceNodes(serviceOptions.getName())
+                .flatMap(serviceList -> {
+                    if (serviceList.getList().stream().anyMatch(service -> service.getName().equals(SERVICE_ID))) {
+                        return Uni.createFrom().item(false);
+                    }
+                    return consulClient.registerService(serviceOptions).map(unused -> true);
+                })
+                .subscribe()
+                .with(
+                        reconnected -> {
+                            if(TRUE.equals(reconnected)) {
+                                LOGGER.infof("service with id %s reconnected at %s.", SERVICE_ID, Instant.now());
+                            }
+                        },
+                        failure -> LOGGER.errorf("service with id %s failed to reconnect", SERVICE_ID, failure)
+                );
     }
 
 }

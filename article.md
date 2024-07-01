@@ -1,6 +1,6 @@
 # Implémenter un Service Discovery avec [Quarkus](https://quarkus.io), [Stork](https://smallrye.io/smallrye-stork/) et [Consul](https://www.consul.io/).
 
-## Préambule
+## Préambule.
 
 Dans l'éco système informatique, nos différents services ont vocation à communiquer entre eux.\
 Pour permettre cette communication, différentes stratégies peuvent être mises en place,
@@ -12,7 +12,7 @@ Mais, si notre instance n'est plus disponible ?
 
 ![mais elle est où ?](https://j.gifs.com/o2kxJz.gif)
 
-Nous pouvons, pour palier à ce risque d'indisponibilité de notre service, choisir de communiquer avec plusieurs instances d'un service en spécifiant leurs URLs "en dur" dans la configuration de notre service appelant.
+Nous pouvons, pour palier à ce risque d'indisponibilité de notre service, choisir de communiquer avec plusieurs instances d'un même service en spécifiant leurs URLs "en dur" dans la configuration de notre service appelant.
 
 ![sans service discovery - multi instances](./resources/sans-service-discovery-multi-instances.png)
 
@@ -23,7 +23,7 @@ Comment rajouter de nouvelles instances ?
 ![prise de tête](https://j.gifs.com/m67XGX.gif)
 
 ## 1. Introduction.
-Dans une architecture micro-services (ou non d'ailleurs), il est important de pouvoir scaler nos applications.
+Dans une architecture micro-services (ou non d'ailleurs), il est important de pouvoir scaler (ajouter ou enlever des instances) nos applications.
 
 Nos différents appels doivent pouvoir être répartis entre les différents services accessibles,
 il est important de savoir où ils sont situés.
@@ -80,19 +80,23 @@ C’est avec lui que nos services communiqueront pour savoir qui appeler et où.
 ## 6. Quels sont les services nécessaires à la mise en place de notre Service Discovery ?
 Afin d'implémenter notre architecture, différents acteurs sont nécessaires :
 
-Dans un premier temps, Consul en tant qu'application.
+### Dans un premier temps, Consul en tant qu'application.
 Il est la pierre angulaire de notre Service Discovery, il se doit d'être disponible en permanence et, dans cette optique,
-peut être déployé en mode distribué. (cette partie ne fait pas l'objet de cet article)
+peut être déployé en mode distribué (cette partie ne fait pas l'objet de cet article).
 
-Ensuite un client Consul côté service à découvrir.
+### Ensuite un client Consul côté service à découvrir.
 Il sera utilisé afin de s'enregistrer auprès de Consul au démarrage du service,
-se désenregistrer à l'arrêt du service et, éventuellement, se réenregistrer en cas de coupure réseau. (nous y reviendrons plus tard)
+se désenregistrer à l'arrêt du service et, éventuellement, se réenregistrer en cas de coupure réseau (nous y reviendrons plus tard).
 
-Enfin Stork côté service appelant.
+### Enfin Stork côté service appelant.
 Il supervisera la récuperation de la liste des instances disponibles du service à appeler,
 et choisira vers lequel envoyer les requêtes.
 
 ## 7. Implémentation
+
+Voici à quoi devrait ressembler notre architecture finale :
+
+![avec service discovery multi instances](./resources/avec-service-discovery-multi-instances.png)
 
 ### Mise en place/configuration de Consul.
 Pour démarrer notre Consul, nous passerons par l'image docker officielle et la démarrerons via un docker-compose.
@@ -123,9 +127,10 @@ la commande `docker-compose up -f /chemin/vers/docker-compose.yml -d consul` de 
 La première étape consiste à générer notre projet, pour ça nous allons passer par [code.quarkus.io](https://code.quarkus.io).
 l'interface ressemble à ça :
 ![code.quarkus.io](./resources/code.quarkus.io.png)
+
 La partie en haut à gauche vous permet de configurer votre application (groupId, artifactId, ...) en cliquant sur `+ more options`
 vous pourrez également choisir la version de Java à utiliser (entre autre), lors de l'écriture de cet article,
-la version de Quarkus proposée était la 3.11 et la version de Java utilisé par défaut la 21.
+la version de Quarkus proposée était la 3.12 et la version de Java utilisé par défaut la 21.
 
 Dans la liste des extensions disponibles, nous choisirons uniquement `REST Jackson`
 (notre but ici étant juste de créer un service simple exposant une api rest)
@@ -300,11 +305,12 @@ Nous avons fini d'initialiser notre classe, il ne nous reste plus qu'à écrire 
 et se désenregistrer.
 ConsulClient s'appuie sur [Smallrye Mutiny](https://smallrye.io/smallrye-mutiny/) qui est une librairie pour faire
 de la programmation réactive événementielle.
-ConsulClient propose deux méthodes pour enregistrer un service, une "bloquante"
-`registerServiceAndAwait(ServiceOptions serviceOptions)` et une "non bloquante"
-`registerService(ServiceOptions serviceOptions)` qui sera exécuté sur un thread dedié.
+ConsulClient propose trois méthodes pour enregistrer un service, une "bloquante"
+`registerServiceAndAwait(ServiceOptions serviceOptions)` et deux "non bloquantes"
+`registerService(ServiceOptions serviceOptions)` et `registerServiceAndForget(ServiceOptions serviceOptions)`
+qui seront exécutées sur un thread dedié.
 
-Ici, nous utiliserons la méthode non bloquante.
+Ici, nous utiliserons la méthode non bloquante `registerService`.
 
 Voici à quoi ressemble la méthode d'enregistrement :
 ```java
@@ -368,8 +374,8 @@ public class DiscoveryRegistration {
 #### Déconnexion gracieuse.
 
 Maintenant que l'enregistrement auprès de Consul s'est effectué correctement, nous allons nous pencher sur la déconnexion.\
-Tout comme pour l'enregistrement, ConsulClient propose deux méthodes pour désenregistrer son service,
-`deregisterService(String serviceId)` et `deregisterServiceAndAwait(String serviceId)`.\
+Tout comme pour l'enregistrement, ConsulClient propose trois méthodes pour désenregistrer son service,
+`deregisterService(String serviceId)`, `deregisterServiceAndForget(String serviceId)` et `deregisterServiceAndAwait(String serviceId)`.\
 Ici non utiliseront la méthode bloquante.
 
 Notre méthode de désenregistrement ressemble à ça :
@@ -444,7 +450,7 @@ Nous en avons fini pour l'instant avec notre Service à découvrir, passons à n
 
 ### Création de mon deuxième micro-service Quarkus.
 
-#### Préparation
+#### Préparation.
 
 Pour ce micro-service, nous allons nous servir du plugin Quarkus d'IntelliJ, les plugins des autres éditeurs sont similaires.
 
@@ -496,7 +502,7 @@ public class DiscovererResource {
 ```
 Pour l'instant, elle renvoie une chaine vide.
 
-#### Mise en place de du Client Rest
+#### Mise en place du Client Rest.
 
 Notre but est de consommer notre premier service, il va donc nous falloir un client Rest.
 En Quarkus, il est implémenté de cette façon : 
@@ -590,4 +596,259 @@ public class DiscovererResource {
 ```
 Et... C'est tout ! Tout est prêt pour tester que ça fonctionne comme attendu.
 
-Pour faire nos tests, il suffit de lancer plusieurs instances de notre service `discovered`
+Pour faire nos tests, il suffit de :
+- démarrer Consul
+- lancer plusieurs instances de notre service `discovered` avec la commande `java -jar` par exemple (attention le livrable est présent dans target/quarkus-app/quarkus-run.jar). Pour lancer plusieurs instances en local, il suffit de changer le port en ajoutant `-Dquarkus.http.port=<numéro de port>` à notre commande.
+- lancer une instance de notre service `discoverer`
+Dès lors, les appels au service discoverer devraient renvoyer une réponse du type : <pre>"a GET request has been done to \`discovered` node with id : \<uuid of a node>"</pre> en renvoyant l'id d'un noeud en mode round-robin.
+
+### TroubleShooting.
+Vous pourriez avoir remarqué, lors de l'utilisation en mode compilé multi instances, des problèmes d'enregistrement auprès de Consul.\
+A l'heure actuelle, l'adresse IP `0.0.0.0` n'est pas considérée comme valide au niveau de `ConsulClient`, pour palier à ce problème il suffit de modifier votre code comme suit :
+```java
+package demo.service.discovery;
+
+import java.util.UUID;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+import io.vertx.ext.consul.ConsulClientOptions;
+import io.vertx.ext.consul.ServiceOptions;
+import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.ext.consul.ConsulClient;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+@ApplicationScoped
+public class DiscoveryRegistration {
+
+    public static final String SERVICE_ID = UUID.randomUUID().toString();
+    private final ConsulClient consulClient;
+    private final ServiceOptions serviceOptions;
+    
+    @Inject
+    DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
+                          @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
+                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
+                          @ConfigProperty(name = "quarkus.http.port") int applicationPort,
+                          @ConfigProperty(name = "quarkus.application.name") String serviceName,
+                          Vertx vertx) {
+        var consulClientOptions = new ConsulClientOptions().setHost(consulHost).setPort(consulPort);
+        consulClient = ConsulClient.create(vertx, consulClientOptions);
+        var host = applicationHost.equals("0.0.0.0") ? "localhost" : applicationHost;
+        serviceOptions = new ServiceOptions()
+                .setId(SERVICE_ID)
+                .setName(serviceName)
+                .setAdress(host)
+                .setPort(applicationPort);
+    }  
+
+}
+```
+Vous pouvez également modifier la méthode `register` afin de logger les erreurs d'enregistrement :
+```java
+    public void register(@Observes StartupEvent event) {
+        consulClient.registerService(serviceOptions)
+                .subscribe()
+                .with(
+                        unused -> LOGGER.infof("service with id %s registered at %s.", SERVICE_ID, Instant.now()),
+                        failure -> LOGGER.errorf("service with id %s failed to register", SERVICE_ID, failure)
+                );
+    }
+```
+Attention toutefois, les exceptions levées dans `failure` ne sont pas forcément explicites et parfois sans StackTrace.
+
+### Pour aller plus loin...
+
+Nous venons de mettre en place notre solution de Service Discovery de la manière la plus simple qu'il soit, nous pouvons cependant étoffer un peu notre code.
+
+#### Les Health Check.
+
+Consul nous propose la possibilité d'ajouter des Health Check sur nos services.
+Il est possible de le faire lors de l'enregistrement du service ou en différé (en utilisant la méthode `consulClient.registerCheck`), voici un exemple de comment le faire lors de l'enregistrement :
+```java
+package demo.service.discovery;
+
+import java.util.UUID;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+import io.vertx.ext.consul.ConsulClientOptions;
+import io.vertx.ext.consul.ServiceOptions;
+import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.ext.consul.ConsulClient;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+@ApplicationScoped
+public class DiscoveryRegistration {
+
+    public static final String SERVICE_ID = UUID.randomUUID().toString();
+    private final ConsulClient consulClient;
+    private final ServiceOptions serviceOptions;
+    
+    @Inject
+    DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
+                          @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
+                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
+                          @ConfigProperty(name = "quarkus.http.port") int applicationPort,
+                          @ConfigProperty(name = "quarkus.application.name") String serviceName,
+                          Vertx vertx) {
+        var consulClientOptions = new ConsulClientOptions().setHost(consulHost).setPort(consulPort);
+        consulClient = ConsulClient.create(vertx, consulClientOptions);
+        var host = applicationHost.equals("0.0.0.0") ? "localhost" : applicationHost;
+        var healthUri = UriBuilder.fromResource(HealtCheckResource.class)
+                .scheme("http")
+                .host(host)
+                .port(applicationPort)
+                .build();
+        var checkOption = new CheckOptions()
+                .setId("httpServiceCheck-%s".formatted(SERVICE_ID))
+                .setName("discovered-service-check")
+                .setInterval("1s")
+                .setDeregisterAfter("5s")
+                .setStatus(CheckStatus.PASSING)
+                .setNotes("some notes")
+                .setHttp(healthUri.toString());
+        serviceOptions = new ServiceOptions()
+                .setId(SERVICE_ID)
+                .setName(serviceName)
+                .setAdress(host)
+                .setPort(applicationPort)
+                .setCheckOptions(checkOption);
+    }  
+
+}
+```
+`healthUri` va nous permettre de définir sur quel endpoint éffectuer notre check. Ici, j'utilise la simplification `fromResource` proposée par la classe `UriBuilder` qui gère automatiquement le chemin associé à la ressource donnée. Je spécifie cependant le type de schema (ici `http` parce que je suis en local) et le couple hôte/port.\
+`checkOption` représente le check en lui-même, il doit comporter :
+- un id unique (ici, je me sers de l'UUID de l'application pour le rendre unique entre chaque instance)
+- un nom (optionnel, mais c'est toujours plus simple pour l'identifier)
+- un type, ici http, ce type est défini par le type de setter employé, dans notre cas le `setHttp(healthUri.toString())`. Dans le cas du check http un interval de check doit être spécifié avec `setInterval`, cet interval est au format duration tel que spécifié en golang ([ref](https://pkg.go.dev/time#ParseDuration))
+il est possible de spécifier d'autres paramètres :
+- `setDeregisterAfter` permet de spécifier au bout de combien de temps en échec notre service doit sortir du pool.
+- `setStatus` permet de spécifier le statut initial.
+- `setNotes` permet d'ajouter des notes concernant notre check
+
+Il est possible de fournir plusieurs check pour la même application et différents types de check sont disponibles.\
+Si le check est unique, il peut être ajouté en utilisant la méthode `setCheckOptions` de la classe `ServiceOptions`.
+Dans le cas de check multiple, nous utiliserons alors la méthode `setCheckListOptions`.
+
+#### Autres Services, Autres technos, même fédérateur.
+Nous venons d'implémenter notre Service Discovery et d'enregistrer un service Quarkus dessus, il est bien sûr possible d'enregistrer d'autres services, Quelle que soit la techno ou le framework utilisé, auprès de Consul.\
+Il faudra pour cela faire appel à l'[API Consul](https://developer.hashicorp.com/consul/docs/services/usage/register-services-checks#register-using-the-api) ou à l'implémentation présente dans votre techno/framework.\
+L'ensemble de vos services seront alors fédérés au sein de Consul et accessibles via Stork.
+
+#### Reconnexion automatique en cas de problèmes liés au réseau.
+
+Il se peut que, suite aux health check, certaines instances aient été sorties du pool et, ce, alors qu'elles sont encore actives (si votre réseau est instable par exemple).\
+Pour palier à ce problème, il est possible de tenter de se réenregistrer de manière périodique de la manière suivante :
+```java
+    @Scheduled(every = "3s")
+    public void reconnect() {
+        consulClient.catalogServiceNodes(serviceOptions.getName())
+                .flatMap(serviceList -> {
+                    if (serviceList.getList().stream().anyMatch(service -> service.getName().equals(SERVICE_ID))) {
+                        return Uni.createFrom().item(false);
+                    }
+                    return consulClient.registerService(serviceOptions).map(unused -> true);
+                })
+                .subscribe()
+                .with(
+                        reconnected -> {
+                            if(TRUE.equals(reconnected)) {
+                                LOGGER.infof("service with id %s reconnected at %s.", SERVICE_ID, Instant.now());
+                            }
+                        },
+                        failure -> LOGGER.errorf("service with id %s failed to reconnect", SERVICE_ID, failure)
+                );
+    }
+```
+`consulClient.catalogServiceNodes` nous donne la liste des instances pour le service demandé, le fait d'avoir généré un `SERVICE_ID` en constante permet de filtrer ces services afin de s'assurer que notre instance n'est pas déjà présente et de réagir en conséquence.
+
+Afin de pouvoir utiliser l'annotation `@Scheduled` il faudra rajouter la lib :
+```xml
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-scheduler</artifactId>
+        </dependency>
+```
+dans votre pom.
+
+#### Consul en mode distribué
+
+Comme dit en début d'article, Consul est conçu pour travailler en mode distribué, voici un exemple de docker-compose pour le deployer de cette façon :
+```yaml
+version: '3.7'
+
+services:
+  consul-1:
+    image: hashicorp/consul:1.19
+    container_name: consul-1
+    restart: always
+    ports:
+      - '8300:8300'
+      - '8301:8301'
+      - '8302:8302'
+      - '8400:8400'
+      - '8500:8500'
+      - '8501:8501'
+      - '8600:53/udp'
+    volumes:
+      - ./config/dc.json:/consul/config/dc.json
+    networks:
+      consul-network:
+        ipv4_address: 10.10.11.111
+    command: "agent  -server -ui -node=quarkus-consul-server-1 -bootstrap-expect=3 -client=0.0.0.0 -bind=0.0.0.0 --https-port=8501"
+
+  consul-2:
+    image: hashicorp/consul:1.19
+    container_name: 'consul-2'
+    command: 'agent -server -retry-join consul-1 -node=quarkus-consul-server-2 -log-level=debug'
+    depends_on:
+      - consul-1
+    volumes:
+      - ./config/dc.json:/consul/config/dc.json
+    networks:
+      consul-network:
+        ipv4_address: 10.10.11.112
+
+  consul-3:
+    image: hashicorp/consul:1.19
+    container_name: 'consul-3'
+    command: 'agent -server -retry-join consul-1 -node=quarkus-consul-server-3 -log-level=debug'
+    depends_on:
+      - consul-1
+    volumes:
+      - ./config/dc.json:/consul/config/dc.json
+    networks:
+      consul-network:
+        ipv4_address: 10.10.11.113
+
+networks:
+  consul-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.11.0/24
+          gateway: 10.10.11.1
+```
+La configuration présente dans `dc.json` est la suivante :
+```json
+{
+  "datacenter": "quarkus-datacenter"
+}
+```
+(ici, elle ne sert qu'à changer le nom du datacenter).
+
+Le fait d'être en cluster permet de procurer de la résilience (les informations concernant nos services sont stockées sur tous les nœuds) et de la haute disponibilité (si un nœud venait à tomber les autres resteraient accessible).\
+Pour la partie haute disponibilité, le client Consul de Quarkus n'assure ni la répartition, ni la détection de panne, deux choix s'offre alors à vous :
+- mettre votre cluster derrière un reverse-proxy (ou un load balancer) type `nginx`
+- implémenter "à la main" l'accès à vos nœuds en, soit créant plusieurs ConsulClient pointant chacun sur un nœud, soit en récupérant la liste des nœuds consul disponibles régulièrement et en la méttant en cache pour faciliter la création d'un nouveau client si le premier venait à tomber, soit un mélange des deux.
+
+## Conclusion
+Nous venons de découvrir comment implémenter simplement un Service Discovery avec Quarkus, Stork et Consul afin de faciliter les interactions entre les différents services de notre architecture.
+Nous nous sommes également rendu compte au fil de l’article que cela ne venait pas sans un certain coup inhérent à la mise en place de ce type de solution, mais que cela est nécessaire à la scalabilité de notre architecture.
+
+L'ensemble des sources de ce projet sont disponibles [ici](https://github.com/Zenika/quarkus-stork-service-discovery-example)

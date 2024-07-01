@@ -13,7 +13,7 @@ public class DiscoveredResource {
     @GET
     @Produces(TEXT_PLAIN)
     public String get() {
-        return "a GET request has been done to `discovered` node with id : " + SERVICE_ID;
+        return "a GET request has been done to `discovered` node with id : %s".formatted(SERVICE_ID);
     }
 
 }
