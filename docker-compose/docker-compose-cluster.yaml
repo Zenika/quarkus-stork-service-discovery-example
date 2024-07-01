@@ -1,0 +1,54 @@
+version: '3.7'
+
+services:
+  consul-1:
+    image: hashicorp/consul:1.19
+    container_name: consul-1
+    restart: always
+    ports:
+      - '8300:8300'
+      - '8301:8301'
+      - '8302:8302'
+      - '8400:8400'
+      - '8500:8500'
+      - '8501:8501'
+      - '8600:53/udp'
+    volumes:
+      - ./config/dc.json:/consul/config/dc.json
+    networks:
+      consul-network:
+        ipv4_address: 10.10.11.111
+    command: "agent  -server -ui -node=quarkus-consul-server-1 -bootstrap-expect=3 -client=0.0.0.0 -bind=0.0.0.0 --https-port=8501"
+
+  consul-2:
+    image: hashicorp/consul:1.19
+    container_name: 'consul-2'
+    command: 'agent -server -retry-join consul-1 -node=quarkus-consul-server-2 -log-level=debug'
+    depends_on:
+      - consul-1
+    volumes:
+      - ./config/dc.json:/consul/config/dc.json
+    networks:
+      consul-network:
+        ipv4_address: 10.10.11.112
+
+  consul-3:
+    image: hashicorp/consul:1.19
+    container_name: 'consul-3'
+    command: 'agent -server -retry-join consul-1 -node=quarkus-consul-server-3 -log-level=debug'
+    depends_on:
+      - consul-1
+    volumes:
+      - ./config/dc.json:/consul/config/dc.json
+    networks:
+      consul-network:
+        ipv4_address: 10.10.11.113
+
+networks:
+  consul-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.11.0/24
+          gateway: 10.10.11.1

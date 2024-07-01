@@ -1,0 +1,9 @@
+version: '3.7'
+
+services:
+  consul:
+    image: hashicorp/consul:1.19
+    container_name: consul
+    restart: always
+    network_mode: host
+    command: "agent  -dev -ui -client=0.0.0.0 -bind=127.0.0.1 --https-port=8501"
