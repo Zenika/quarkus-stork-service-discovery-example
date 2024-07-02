@@ -853,6 +853,19 @@ Pour la partie haute disponibilité, le client Consul de Quarkus n'assure ni la 
 - mettre votre cluster derrière un reverse-proxy (ou un load balancer) type `nginx`
 - implémenter "à la main" l'accès à vos nœuds en, soit créant plusieurs ConsulClient pointant chacun sur un nœud, soit en récupérant la liste des nœuds consul disponibles régulièrement et en la méttant en cache pour faciliter la création d'un nouveau client si le premier venait à tomber, soit un mélange des deux.
 
+#### Load balancing
+
+Stork s'occupe du de la gestion de la répartition sur les différentes instances, il est configuré par défaut en `round-robin`.\
+Il est possible de modifié sont comportement via la property `quarkus.stork.<serviceName>.load-balancer.type`.\
+Les options disponibles sont :
+- `round-robin` : l'instance suivante dans la liste est sélectionnée ([stratégie round-robin](https://smallrye.io/smallrye-stork/2.6.0/load-balancer/round-robin/)).
+- `random` : une instance est sélectionnée de manière totalement aléatoire ([stratégie random](https://smallrye.io/smallrye-stork/2.6.0/load-balancer/random/)).
+- `least-requests` : l'instance avec le moins de requêtes est sélectionnée ([stratégie least-requests](https://smallrye.io/smallrye-stork/2.6.0/load-balancer/least-requests/)).
+- `least-response-time` : si une instance n'a jamais été appelée elle est selectionnée, sinon c'est l'instance avec le meilleur temps de réponse qui l'est ([stratégie response-time](https://smallrye.io/smallrye-stork/2.6.0/load-balancer/response-time/)).
+- `power-of-two-choices` : deux instances sont choisies de manière aléatoire, et celle avec le moins de requêtes est sélectionnée parmi ces deux instances ([stratégie power-of-two-choices](https://smallrye.io/smallrye-stork/2.6.0/load-balancer/power-of-two-choices/)).
+- `sticky` : une instance est sélectionnée et est conservée tant qu'elle n'est pas en échec ([stratégie sticky](https://smallrye.io/smallrye-stork/2.6.0/load-balancer/sticky/)).
+- `<custom>` : si aucun des précédents ne vous convient, vous pouvez implémenter votre mécanisme de load balancing ([stratégie custom-load-balancer](https://smallrye.io/smallrye-stork/2.6.0/load-balancer/custom-load-balancer/)).
+
 ## Conclusion
 Nous venons de découvrir comment implémenter simplement un Service Discovery avec Quarkus, Stork et Consul afin de faciliter les interactions entre les différents services de notre architecture.
 Nous nous sommes également rendu compte au fil de l’article que cela ne venait pas sans un certain coup inhérent à la mise en place de ce type de solution, mais que cela est nécessaire à la scalabilité de notre architecture.
