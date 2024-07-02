@@ -34,20 +34,17 @@ public class DiscoveryRegistration {
     @Inject
     DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
                           @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
-                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
                           @ConfigProperty(name = "quarkus.http.port") int applicationPort,
                           @ConfigProperty(name = "quarkus.application.name") String serviceName,
                           Vertx vertx) {
         LOGGER.infof("service registrar is available at http://%s:%d", consulHost, consulPort);
         var consulClientOptions = new ConsulClientOptions().setHost(consulHost).setPort(consulPort);
         consulClient = ConsulClient.create(vertx, consulClientOptions);
-        var host = applicationHost.equals("0.0.0.0") ? "localhost" : applicationHost;
         var healthUri = UriBuilder.fromResource(HealthCheckResource.class)
                 .scheme("http")
-                .host(host)
                 .port(applicationPort)
                 .build();
-        var checkOption = new CheckOptions()
+        var checkOptions = new CheckOptions()
                 .setId("httpServiceCheck-%s".formatted(SERVICE_ID))
                 .setName("discovered-service-check")
                 .setInterval("1s")
@@ -58,9 +55,8 @@ public class DiscoveryRegistration {
         serviceOptions = new ServiceOptions()
                 .setId(SERVICE_ID)
                 .setName(serviceName)
-                //.setAddress(host)
                 .setPort(applicationPort)
-                .setCheckOptions(checkOption);
+                .setCheckOptions(checkOptions);
     }
 
     public void register(@Observes StartupEvent event) {

@@ -185,7 +185,7 @@ Maintenant que nous avons posé les bases, il ne nous reste plus qu'à procéder
 Pour cela, nous allons créer une classe `DiscoveryRegistration`.
 Il va nous falloir un ensemble d'informations indispensables :
 - l'hôte et le port de Consul
-- l'hôte et le port de notre Service
+- le port de notre Service (l'hôte est récupéré automatiquement en se basant sur l'adresse IP de l'agent Consul)
 - un nom unique (c'est lui qui sera utilisé pour faire la corrélation entre les différentes instances)
 - un id unique propre à chaque instance de l'application.
 
@@ -195,8 +195,7 @@ il est accessible via la propriété `quarkus.application.name`.
 Pour l'id unique de l'application, un UUID fera l'affaire.
 C'est cet id qui sera retourné lors de l'appel à `DiscoveredResource`.
 
-Pour l'hôte et le port de notre Service, ils sont accessibles respectivement via les propriétés `quarkus.http.host`
-et `quarkus.http.port`.
+Pour le port de notre Service, il est accessible via la propriété `quarkus.http.port`.
 
 Enfin pour l'hôte et le port de Consul, ce sera à nous de les spécifier, pour ça il suffit d'ajouter la configuration
 dans le fichier de configuration de Quarkus (application.properties ou application.yml) qui se trouve dans `src/main/resources`
@@ -223,7 +222,6 @@ public class DiscoveryRegistration {
     
     DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
                           @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
-                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
                           @ConfigProperty(name = "quarkus.http.port") int applicationPort,
                           @ConfigProperty(name = "quarkus.application.name") String serviceName) {
         
@@ -256,7 +254,6 @@ public class DiscoveryRegistration {
     @Inject
     DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
                           @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
-                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
                           @ConfigProperty(name = "quarkus.http.port") int applicationPort,
                           @ConfigProperty(name = "quarkus.application.name") String serviceName,
                           Vertx vertx) {
@@ -292,7 +289,6 @@ public class DiscoveryRegistration {
     @Inject
     DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
                           @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
-                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
                           @ConfigProperty(name = "quarkus.http.port") int applicationPort,
                           @ConfigProperty(name = "quarkus.application.name") String serviceName,
                           Vertx vertx) {
@@ -301,7 +297,6 @@ public class DiscoveryRegistration {
         serviceOptions = new ServiceOptions()
                 .setId(SERVICE_ID)
                 .setName(serviceName)
-                .setAdress(applicationHost)
                 .setPort(applicationPort);
     }  
 
@@ -357,7 +352,6 @@ public class DiscoveryRegistration {
     @Inject
     DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
                           @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
-                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
                           @ConfigProperty(name = "quarkus.http.port") int applicationPort,
                           @ConfigProperty(name = "quarkus.application.name") String serviceName,
                           Vertx vertx) {
@@ -366,7 +360,6 @@ public class DiscoveryRegistration {
         serviceOptions = new ServiceOptions()
                 .setId(SERVICE_ID)
                 .setName(serviceName)
-                .setAddress(applicationHost)
                 .setPort(applicationPort);
     }
 
@@ -420,7 +413,6 @@ public class DiscoveryRegistration {
     @Inject
     DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
                           @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
-                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
                           @ConfigProperty(name = "quarkus.http.port") int applicationPort,
                           @ConfigProperty(name = "quarkus.application.name") String serviceName,
                           Vertx vertx) {
@@ -429,7 +421,6 @@ public class DiscoveryRegistration {
         serviceOptions = new ServiceOptions()
                 .setId(SERVICE_ID)
                 .setName(serviceName)
-                .setAddress(applicationHost)
                 .setPort(applicationPort);
     }
 
@@ -609,49 +600,8 @@ Pour faire nos tests, il suffit de :
 Dès lors, les appels au service discoverer devraient renvoyer une réponse du type : <pre>"a GET request has been done to \`discovered` node with id : \<uuid of a node>"</pre> en renvoyant l'id d'un noeud en mode round-robin.
 
 ### TroubleShooting.
-Vous pourriez avoir remarqué, lors de l'utilisation en mode compilé multi instances, des problèmes d'enregistrement auprès de Consul.\
-A l'heure actuelle, l'adresse IP `0.0.0.0` n'est pas considérée comme valide au niveau de `ConsulClient`, pour palier à ce problème il suffit de modifier votre code comme suit :
-```java
-package demo.service.discovery;
 
-import java.util.UUID;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
-import io.vertx.ext.consul.ConsulClientOptions;
-import io.vertx.ext.consul.ServiceOptions;
-import io.vertx.mutiny.core.Vertx;
-import io.vertx.mutiny.ext.consul.ConsulClient;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-@ApplicationScoped
-public class DiscoveryRegistration {
-
-    public static final String SERVICE_ID = UUID.randomUUID().toString();
-    private final ConsulClient consulClient;
-    private final ServiceOptions serviceOptions;
-    
-    @Inject
-    DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
-                          @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
-                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
-                          @ConfigProperty(name = "quarkus.http.port") int applicationPort,
-                          @ConfigProperty(name = "quarkus.application.name") String serviceName,
-                          Vertx vertx) {
-        var consulClientOptions = new ConsulClientOptions().setHost(consulHost).setPort(consulPort);
-        consulClient = ConsulClient.create(vertx, consulClientOptions);
-        var host = applicationHost.equals("0.0.0.0") ? "localhost" : applicationHost;
-        serviceOptions = new ServiceOptions()
-                .setId(SERVICE_ID)
-                .setName(serviceName)
-                .setAdress(host)
-                .setPort(applicationPort);
-    }  
-
-}
-```
-Vous pouvez également modifier la méthode `register` afin de logger les erreurs d'enregistrement :
+Vous pouvez modifier la méthode `register` afin de logger les erreurs d'enregistrement :
 ```java
     public void register(@Observes StartupEvent event) {
         consulClient.registerService(serviceOptions)
@@ -696,19 +646,16 @@ public class DiscoveryRegistration {
     @Inject
     DiscoveryRegistration(@ConfigProperty(name = "service-registrar.host", defaultValue = "localhost") String consulHost,
                           @ConfigProperty(name = "service-registrar.port", defaultValue = "8500") int consulPort,
-                          @ConfigProperty(name = "quarkus.http.host") String applicationHost,
                           @ConfigProperty(name = "quarkus.http.port") int applicationPort,
                           @ConfigProperty(name = "quarkus.application.name") String serviceName,
                           Vertx vertx) {
         var consulClientOptions = new ConsulClientOptions().setHost(consulHost).setPort(consulPort);
         consulClient = ConsulClient.create(vertx, consulClientOptions);
-        var host = applicationHost.equals("0.0.0.0") ? "localhost" : applicationHost;
         var healthUri = UriBuilder.fromResource(HealtCheckResource.class)
                 .scheme("http")
-                .host(host)
                 .port(applicationPort)
                 .build();
-        var checkOption = new CheckOptions()
+        var checkOptions = new CheckOptions()
                 .setId("httpServiceCheck-%s".formatted(SERVICE_ID))
                 .setName("discovered-service-check")
                 .setInterval("1s")
@@ -719,14 +666,13 @@ public class DiscoveryRegistration {
         serviceOptions = new ServiceOptions()
                 .setId(SERVICE_ID)
                 .setName(serviceName)
-                .setAdress(host)
                 .setPort(applicationPort)
-                .setCheckOptions(checkOption);
+                .setCheckOptions(checkOptions);
     }  
 
 }
 ```
-`healthUri` va nous permettre de définir sur quel endpoint éffectuer notre check. Ici, j'utilise la simplification `fromResource` proposée par la classe `UriBuilder` qui gère automatiquement le chemin associé à la ressource donnée. Je spécifie cependant le type de schema (ici `http` parce que je suis en local) et le couple hôte/port.\
+`healthUri` va nous permettre de définir sur quel endpoint éffectuer notre check. Ici, j'utilise la simplification `fromResource` proposée par la classe `UriBuilder` qui gère automatiquement le chemin associé à la ressource donnée. Il faut cependant spécifier le type de schema (ici `http` parce que je suis en local) l'hôte et le port sont facultatifs, il reste préférable de spécifier le port (comme pour serviceOptions, notre hôte sera déduit de l'adresse IP du client Consul).\
 `checkOption` représente le check en lui-même, il doit comporter :
 - un id unique (ici, je me sers de l'UUID de l'application pour le rendre unique entre chaque instance)
 - un nom (optionnel, mais c'est toujours plus simple pour l'identifier)
