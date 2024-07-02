@@ -754,7 +754,7 @@ Pour palier à ce problème, il est possible de tenter de se réenregistrer de m
     public void reconnect() {
         consulClient.catalogServiceNodes(serviceOptions.getName())
                 .flatMap(serviceList -> {
-                    if (serviceList.getList().stream().anyMatch(service -> service.getName().equals(SERVICE_ID))) {
+                    if (serviceList.getList().stream().anyMatch(service -> service.getId().equals(SERVICE_ID))) {
                         return Uni.createFrom().item(false);
                     }
                     return consulClient.registerService(serviceOptions).map(unused -> true);

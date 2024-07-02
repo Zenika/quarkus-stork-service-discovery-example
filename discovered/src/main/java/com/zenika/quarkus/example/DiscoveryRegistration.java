@@ -58,7 +58,7 @@ public class DiscoveryRegistration {
         serviceOptions = new ServiceOptions()
                 .setId(SERVICE_ID)
                 .setName(serviceName)
-                .setAddress(host)
+                //.setAddress(host)
                 .setPort(applicationPort)
                 .setCheckOptions(checkOption);
     }
@@ -81,7 +81,7 @@ public class DiscoveryRegistration {
     public void reconnect() {
         consulClient.catalogServiceNodes(serviceOptions.getName())
                 .flatMap(serviceList -> {
-                    if (serviceList.getList().stream().anyMatch(service -> service.getName().equals(SERVICE_ID))) {
+                    if (serviceList.getList().stream().anyMatch(service -> service.getId().equals(SERVICE_ID))) {
                         return Uni.createFrom().item(false);
                     }
                     return consulClient.registerService(serviceOptions).map(unused -> true);
