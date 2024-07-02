@@ -23,8 +23,8 @@ Comment rajouter de nouvelles instances ?
 ![prise de tête](https://j.gifs.com/m67XGX.gif)
 
 Dans les architectures de type Cloud (Kube, Serverless,...) les aspects de localisation de ressources et de load balancing sont, généralement, gérées nativement. 
-Mais tous les systèmes ne beneficent pas de ce type architectures.\
-La mise en place d'un Service Mesh pourrait également être une alternative, mais cela ne s'applique pas nécessairement à tous les cas, la complexité de mise place et de maintenance peut vous amener à chercher un intermediate.
+Mais tous les systèmes ne beneficent pas de ce type d'architecture.\
+La mise en place d'un Service Mesh pourrait également être une alternative, mais cela ne s'applique pas à tous les cas. La complexité de mise place et de maintenance peut vous amener à chercher un intermédiaire.
 
 
 ## 1. Introduction.
