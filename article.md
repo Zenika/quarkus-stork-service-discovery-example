@@ -28,7 +28,7 @@ La mise en place d'un Service Mesh pourrait également être une alternative, ma
 
 
 ## 1. Introduction.
-Dans une architecture micro-services (ou non d'ailleurs), il est important de pouvoir scaler (ajouter ou enlever des instances) nos applications.
+Dans une architecture micro-service (ou non d'ailleurs), il est important de pouvoir scaler nos applications (ajouter ou enlever des instances).
 
 Nos différents appels doivent pouvoir être répartis entre les différents services accessibles,
 il est important de savoir où ils sont situés.
@@ -51,7 +51,7 @@ nécessaires pour :
 - Sélectionner l'instance la plus adaptée.
 
 ## 3. Qu'est-ce que [Quarkus](https://quarkus.io) ?
-Quarkus est un framework Java, similaire à Spring, fortement orienté Cloud et Micro Service.\
+Quarkus est un framework Java, similaire à Spring, fortement orienté Cloud et micro-service.\
 C’est lui qui va nous permettre d’écrire simplement nos applicatifs.
 
 Pour accélérer le démarrage des applicatifs et faciliter leurs interactions au sein d'un environnement cloud,
@@ -89,7 +89,7 @@ Afin d'implémenter notre architecture, différents acteurs sont nécessaires :
 Il est la pierre angulaire de notre Service Discovery, il se doit d'être disponible en permanence et, dans cette optique,
 peut être déployé en mode distribué (cette partie ne fait pas l'objet de cet article).
 
-### Ensuite un client Consul côté service à découvrir.
+### Ensuite un client Consul côté service à référencer.
 Il sera utilisé afin de s'enregistrer auprès de Consul au démarrage du service,
 se désenregistrer à l'arrêt du service et, éventuellement, se réenregistrer en cas de coupure réseau (nous y reviendrons plus tard).
 
@@ -132,7 +132,7 @@ Notre service Consul peut maintenant être démarré en lançant la commande
 `docker-compose up -d consul` dans le repertoire où se situe notre fichier *docker-compose.yml* ou en lançant
 la commande `docker-compose up -f /chemin/vers/docker-compose.yml -d consul` de n'importe quel répertoire.
 
-### Création de mon premier micro-service Quarkus (celui qui sera découvert).
+### Création de mon premier service Quarkus, celui qui sera référencé.
 
 #### Préparation.
 La première étape consiste à générer notre projet, pour ça nous allons passer par [code.quarkus.io](https://code.quarkus.io).
@@ -183,7 +183,7 @@ public class DiscoveredResource {
 
 }
 ```
-#### Enregistrement de mon micro-service auprès de Consul pour découverte.
+#### Enregistrement de mon service auprès de Consul pour découverte.
 
 Maintenant que nous avons posé les bases, il ne nous reste plus qu'à procéder à l'enregistrement de notre service.
 
@@ -450,11 +450,11 @@ Et en cliquant sur le service, nous pouvons voir des informations supplémentair
 
 Nous en avons fini pour l'instant avec notre Service à découvrir, passons à notre deuxième service.
 
-### Création de mon deuxième micro-service Quarkus.
+### Création de mon deuxième service Quarkus, le service appelant.
 
 #### Préparation.
 
-Pour ce micro-service, nous allons nous servir du plugin Quarkus d'IntelliJ, les plugins des autres éditeurs sont similaires.
+Pour ce service, nous allons nous servir du plugin Quarkus d'IntelliJ, les plugins des autres éditeurs sont similaires.
 
 Pour IntelliJ, nous y accédons en passant par `File -> New -> Project...`.
 Dans la liste de gauche nous choisirons `Quarkus` qui se situe dans `Generator`.

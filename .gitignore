@@ -22,7 +22,6 @@ bin/
 nb-configuration.xml
 
 # Visual Studio Code
-.vscode
 .factorypath
 
 # OSX
@@ -41,3 +40,7 @@ nb-configuration.xml
 
 # Plugin directory
 /.quarkus/cli/plugins/
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
